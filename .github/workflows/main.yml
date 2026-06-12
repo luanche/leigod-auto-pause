@@ -22,5 +22,6 @@ jobs:
         run: |
           node index.js
         env:
+          LEIGOD_TOKENS: ${{ secrets.LEIGOD_TOKENS }}
           USERNAME_ARR: ${{ secrets.USERNAME_ARR }}
           PASSWORD_ARR: ${{ secrets.PASSWORD_ARR }}

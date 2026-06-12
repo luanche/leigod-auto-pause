@@ -29,10 +29,10 @@ function sign(data) {
 export class LeigodAPI {
   /**
    *
-   * @param {String} token
+   * @param {String} [token] - Account token (optional, bypasses captcha login)
    */
   constructor(token = null) {
-    this.token = token;
+    if (token) this.setToken(token);
     this.session = axios.create({
       baseURL: 'https://webapi.leigod.com',
       headers: {
@@ -55,23 +55,59 @@ export class LeigodAPI {
    *
    * @param {String} username
    * @param {String} password
+   * @param {Object} [captcha] - Geetest v4 captcha fields (required since Leigod added captcha)
+   * @param {String} captcha.captcha_id
+   * @param {String} captcha.lot_number
+   * @param {String} captcha.pass_token
+   * @param {String} captcha.gen_time
+   * @param {String} captcha.captcha_output
+   * @param {Number} [captcha.server_status=1]
    * @returns
    */
-  async login(username, password) {
-    const response = await this.session.post(
-      '/wap/login/bind/v1',
-      sign({
-        code: '',
-        country_code: 86,
-        lang: 'en',
-        os_type: 5,
-        password: generateMD5(password),
-        src_channel: 'guanwang',
-        region_code: 1,
-        user_type: '0',
-        username: username,
-      }),
-    );
+  /**
+   * Set token directly (bypasses captcha login)
+   * @param {String} token
+   */
+  setToken(token) {
+    this.token = token;
+  }
+
+  /**
+   * @param {String} username
+   * @param {String} password
+   * @param {Object} [captcha] - Geetest v4 captcha fields (required for login)
+   * @returns {Promise<String>} account_token
+   */
+  async login(username, password, captcha = null) {
+    const body = {
+      code: '',
+      country_code: 86,
+      lang: 'en',
+      os_type: 5,
+      password: generateMD5(password),
+      src_channel: 'guanwang',
+      region_code: 1,
+      user_type: '0',
+      username: username,
+    };
+
+    if (!captcha) {
+      throw new Error(
+        'Leigod now requires Geetest captcha for login. ' +
+        'Either:\n' +
+        '  1. Pass captcha data as third argument\n' +
+        '  2. Use constructor/setToken() with an account_token (valid ~7 days)'
+      );
+    }
+
+    body.captcha_id = captcha.captcha_id;
+    body.lot_number = captcha.lot_number;
+    body.pass_token = captcha.pass_token;
+    body.gen_time = captcha.gen_time;
+    body.captcha_output = captcha.captcha_output;
+    body.server_status = captcha.server_status ?? 1;
+
+    const response = await this.session.post('/api/auth/login/v2', sign(body));
     if (response.data['code'] == 0) {
       this.token = response.data['data']['login_info']['account_token'];
       return this.token;
