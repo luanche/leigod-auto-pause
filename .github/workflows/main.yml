@@ -1,8 +1,5 @@
 name: leigod auto pause action
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 on:
   push:
   workflow_dispatch:
@@ -14,9 +11,9 @@ jobs:
   pause:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Use Node.js 24.x
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 24.x
       - name: Run npm install
